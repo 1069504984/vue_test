@@ -61,7 +61,9 @@
                             if (response.data.count > 0) {
                                 this.err_username_msg = '用户名已存在';
                             } else {
-                                callback();
+                                console.log("输入正确用户名发生了什么")
+                                callback()
+
                             }
                         })
                         .catch(error => {
@@ -75,7 +77,7 @@
                                 console.log(error.request);
                             } else {
                                 this.err_username_msg = error.message;
-                                console.log('Error', error.message);
+                                console.log('Error', error.message,this.err_username_msg);
                             }
                         });
                 }

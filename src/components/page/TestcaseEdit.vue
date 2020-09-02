@@ -179,6 +179,7 @@
                                     <el-radio-group v-model="apiMsgData.choiceType">
                                         <el-radio label="data">form-data</el-radio>
                                         <el-radio label="json">json</el-radio>
+                                        <el-radio label="files">form-data-files</el-radio>
                                         <!--<el-radio label="text">text</el-radio>-->
                                     </el-radio-group>
                                     <el-button type="primary" size="mini"
@@ -256,6 +257,55 @@
                                         </template>
                                     </el-table-column>
                                 </el-table>
+
+                                <el-table :data="apiMsgData.filesVariable"
+                                          size="mini"
+                                          stripe
+                                          :show-header="false" height="500"
+                                          style="background-color: rgb(250, 250, 250)"
+                                          v-if="apiMsgData.choiceType === 'files'"
+                                          :row-style="{'background-color': 'rgb(250, 250, 250)'}">
+                                    <el-table-column label="Key" header-align="center" minWidth="100">
+                                        <template slot-scope="scope">
+                                            <el-input v-model="scope.row.key" size="mini" placeholder="key">
+                                            </el-input>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="type" header-align="center" width="100">
+                                        <template slot-scope="scope">
+                                            <el-select v-model="scope.row.param_type" size="mini">
+                                                <el-option v-for="item in paramTypes" :key="item" :value="item">
+                                                </el-option>
+                                            </el-select>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="Value" header-align="center" minWidth="200">
+                                        <template slot-scope="scope">
+                                            <div>
+                                                <el-input v-model="scope.row.value"
+                                                          :id="'files_input' + scope.$index "
+                                                          type="textarea"
+                                                          rows=1
+                                                          @focus="showLine('files_input', scope.$index)"
+                                                          @input="changeLine()"
+                                                          @blur="resetLine()"
+                                                          size="mini"
+                                                          resize="none" placeholder="value">
+                                                </el-input>
+                                            </div>
+
+                                        </template>
+                                    </el-table-column>
+
+                                    <el-table-column property="value" label="操作" header-align="center" width="80">
+                                        <template slot-scope="scope">
+                                            <el-button type="danger" icon="el-icon-delete" size="mini"
+                                                       @click.native="delTableRow('filesVariable',scope.$index)">
+                                            </el-button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+
                             </el-tab-pane>
                             <el-tab-pane label="Extract" name="third">
                                 <el-table :data="apiMsgData.extract" size="mini" stripe :show-header="false"
@@ -531,7 +581,7 @@
                 current_testcase_id: null,
                 editVisible: false,   // 新增项目弹框是否显示标识
                 methods: ['POST', 'GET', 'PUT', 'DELETE'],  // 请求方法
-                types: ['data', 'json', 'params'],  // 请求类型
+                types: ['data', 'json','files','params'],  // 请求类型
                 ParamViewStatus: false,             // params按钮状态
                 comparators: [{'value': 'equals'}, {'value': 'contains'}, {'value': 'contained_by'},
                     {'value': 'startswith'}, {'value': 'endswith'}, {'value': 'regex_match'},
@@ -549,6 +599,7 @@
                     param: [{key: null, value: null}],
                     header: [{key: null, value: null}],
                     variable: [{key: null, value: null, param_type: 'string'}],
+                    filesVariable: [{ key: null, value: null, param_type: 'string' }],
                     jsonVariable: '',
                     extract: [{key: null, value: null}],
                     validate: [{key: null, value: null, comparator: 'equals', param_type: 'string'}],
@@ -851,6 +902,20 @@
 
                 let paramsType = '';
                 let request_data = null;
+                var paramType;
+                if (this.apiMsgData.choiceType === 'files') {
+                    paramType = 'files';
+                    request_data = this.apiMsgData.filesVariable;
+                    request_data.splice(-1, 1);
+                    if (request_data.length !== 0) {
+                        let new_data = this.handleData1(request_data, 'form-data参数');
+                        if (new_data.length === 0) {
+                            return;
+                        }
+                        datas.request.test.request['files'] = new_data;
+                        console.log("datas.request.test.request['files']",new_data)
+                    }
+                }
                 if (this.apiMsgData.choiceType === 'json'){
                     paramsType = 'json';
                     request_data = this.apiMsgData.jsonVariable;
@@ -1030,6 +1095,8 @@
             delTableRow(type, i) {
                 if (type === 'variable') {
                     this.apiMsgData.variable.splice(i, 1);
+                } else if (type === 'filesVariable') {
+                    this.apiMsgData.filesVariable.splice(i, 1);
                 } else if (type === 'header') {
                     this.apiMsgData.header.splice(i, 1);
                 } else if (type === 'validate') {
@@ -1038,21 +1105,23 @@
                     this.apiMsgData.extract.splice(i, 1);
                 } else if (type === 'param') {
                     this.apiMsgData.param.splice(i, 1);
-                }else if (type === 'globalVar') {
+                } else if (type === 'globalVar') {
                     this.apiMsgData.globalVar.splice(i, 1);
-                }else if (type === 'parameterized') {
+                } else if (type === 'parameterized') {
                     this.apiMsgData.parameterized.splice(i, 1);
-                }else if (type === 'setupHooks') {
+                } else if (type === 'setupHooks') {
                     this.apiMsgData.setupHooks.splice(i, 1);
-                }else if (type === 'teardownHooks') {
+                } else if (type === 'teardownHooks') {
                     this.apiMsgData.teardownHooks.splice(i, 1);
                 }
             },
             addTableRow(type) {
                 if (type === 'variable') {
-                    this.apiMsgData.variable.push({key: null, value: null, param_type: 'string'});
+                    this.apiMsgData.variable.push({ key: null, value: null, param_type: 'string' });
+                } else if (type === 'filesVariable') {
+                    this.apiMsgData.filesVariable.push({ key: null, value: null, param_type: 'string' });
                 } else if (type === 'header') {
-                    this.apiMsgData.header.push({key: null, value: null});
+                    this.apiMsgData.header.push({ key: null, value: null });
                 } else if (type === 'validate') {
                     this.apiMsgData.validate.push({key: null, value: null, comparator: 'equals', param_type: 'string'});
                 } else if (type === 'extract') {
@@ -1109,6 +1178,7 @@
                 }
             },
             handleClick() {
+                console.log(this.apiMsgData.jsonVariable);
                 this.apiMsgData.jsonVariable = ''
             },
             querySearch(queryString, cb) {
@@ -1134,7 +1204,7 @@
                         this.apiMsgData.param = response.data.param;
                         this.apiMsgData.header = response.data.header;
                         this.apiMsgData.variable = response.data.variable;
-
+                        this.apiMsgData.filesVariable = response.data.filesVariable;
                         this.apiMsgData.jsonVariable = response.data.jsonVariable;
                         if (this.apiMsgData.jsonVariable === 'null') {
                             this.apiMsgData.choiceType = 'data';
@@ -1164,6 +1234,9 @@
             },
             monitorVariable() {
                 return this.apiMsgData.variable;
+            },
+            monitorfilesVariable() {
+                return this.apiMsgData.filesVariable;
             },
             monitorHeader() {
                 return this.apiMsgData.header;
@@ -1273,6 +1346,31 @@
                     }
                     if (this.apiMsgData.variable[this.apiMsgData.variable.length - 1]['key'] || this.apiMsgData.variable[this.apiMsgData.variable.length - 1]['value']) {
                         this.addTableRow('variable')
+                    }
+                }
+                ,
+                deep: true
+            },
+
+            monitorfilesVariable: {
+                handler: function () {
+                    if (this.apiMsgData.filesVariable.length === 0) {
+                        this.addTableRow('filesVariable')
+                    }
+                    if (this.apiMsgData.filesVariable[this.apiMsgData.filesVariable.length - 1]['key'] || this.apiMsgData.filesVariable[this.apiMsgData.filesVariable.length - 1]['value']) {
+                        this.addTableRow('filesVariable')
+                    }
+                }
+                ,
+                deep: true
+            },
+            monitorfilesVariable: {
+                handler: function() {
+                    if (this.apiMsgData.filesVariable.length === 0) {
+                        this.addTableRow('filesVariable');
+                    }
+                    if (this.apiMsgData.filesVariable[this.apiMsgData.filesVariable.length - 1]['key'] || this.apiMsgData.filesVariable[this.apiMsgData.filesVariable.length - 1]['value']) {
+                        this.addTableRow('filesVariable');
                     }
                 }
                 ,

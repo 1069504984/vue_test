@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-let host = 'http://172.16.0.62:8000';
+let host = 'http://127.0.0.1:8000';
 // let host = 'http://api.keyou.site:8000';
 
 
