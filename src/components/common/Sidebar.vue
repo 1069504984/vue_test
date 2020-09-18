@@ -160,7 +160,97 @@
                                 title: '报告列表'
                             }
                         ]
-                    }
+                    },
+                    {
+                        icon: 'el-icon-s-ticket',
+                        index: '18',
+                        title: 'SDK综合',
+                        subs: [
+                            {
+                                index: 'sdk',
+                                title: '结构化综合'
+                            },
+                            {
+                                index: 'sdk_feature',
+                                title: '搜图综合',
+                            }
+                        ]
+                    },
+                    {
+                        icon: 'el-icon-files',
+                        index: '19',
+                        title: 'Web自动化',
+                        subs: [
+                            {
+                                index: 'sdk',
+                                title: '结构化综合'
+                            },
+                            {
+                                index: 'sdk_feature',
+                                title: '搜图综合',
+                            }
+                        ]
+                    },
+                    {
+                        icon: 'el-icon-phone-outline',
+                        index: '22',
+                        title: 'APP自动化',
+                        subs: [
+                            {
+                                index: 'sdk',
+                                title: '结构化综合'
+                            },
+                            {
+                                index: 'sdk_feature',
+                                title: '搜图综合',
+                            }
+                        ]
+                    },
+                    {
+                        icon: 'el-icon-office-building',
+                        index: '25',
+                        title: '算法模型仓库',
+                        subs: [
+                            {
+                                index: 'sdk',
+                                title: '结构化综合'
+                            },
+                            {
+                                index: 'sdk_feature',
+                                title: '搜图综合',
+                            }
+                        ]
+                    },
+                    {
+                        icon: 'el-icon-s-tools',
+                        index: '28',
+                        title: '定时任务',
+                        subs: [
+                            {
+                                index: 'sdk',
+                                title: '结构化综合'
+                            },
+                            {
+                                index: 'sdk_feature',
+                                title: '搜图综合',
+                            }
+                        ]
+                    },
+                    {
+                        icon: 'el-icon-s-tools',
+                        index: '31',
+                        title: 'CI/CD流水线',
+                        subs: [
+                            {
+                                index: 'sdk',
+                                title: '结构化综合'
+                            },
+                            {
+                                index: 'sdk_feature',
+                                title: '搜图综合',
+                            }
+                        ]
+                    },
                 ]
             }
         },

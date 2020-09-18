@@ -6,16 +6,31 @@
                 <el-breadcrumb-item>编辑用例</el-breadcrumb-item>
             </el-breadcrumb>
         </div>
+
         <div class="container">
+            <el-form>
+                <el-row :gutter="20">
+                    <el-col :span="24">
+                        <el-form-item label="选择配置">
+                            <el-select v-model="selected_configure_id" clearable placeholder="请选择"
+                                    @change="getConfigureDetail(selected_configure_id)">
+                                <el-option v-for="(item, key) in configures" :key="key" :label="item.name"
+                                        :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-form>
             <el-tabs type="border-card">
-                <el-tab-pane label="基本信息">
+                <el-tab-pane label="基本信息" >
                     <div class="form-box">
                         <el-form label-position="left" label-width="80px">
                             <el-row :gutter="20">
                                 <el-col :span="24">
                                     <el-form-item label="选择项目">
                                         <el-select v-model="selected_project_id" placeholder="请选择"
-                                                   @change="getInterfacesByProjectID(selected_project_id)">
+                                                   @change="switchProject">
                                             <el-option v-for="(item, key) in project_names" :key="key"
                                                        :label="item.name" :value="item.id">
                                             </el-option>
@@ -26,17 +41,17 @@
 
                             <el-row :gutter="20">
                                 <el-col :span="12">
-                                    <el-form-item label="选择接口">
-                                        <el-select v-model="selected_interface_id" placeholder="请选择"
-                                                   @change="getConfTestcaseByInterfaceID(selected_interface_id)">
-                                            <el-option v-for="(item, key) in interfaces" :key="key" :label="item.name"
+                                    <el-form-item label="选择模块">
+                                        <el-select v-model="choose_selected_module_id" placeholder="请选择"
+                                                   @change="getTestcaseByModuleID(choose_selected_module_id)">
+                                            <el-option v-for="(item, key) in choose_modules" :key="key" :label="item.name"
                                                        :value="item.id">
                                             </el-option>
                                         </el-select>
                                     </el-form-item>
                                 </el-col>
 
-                                <el-col :span="12">
+                                <!-- <el-col :span="12">
                                     <el-form-item label="选择配置">
                                         <el-select v-model="selected_configure_id" placeholder="请选择" clearable>
                                             <el-option v-for="(item, key) in configures" :key="key" :label="item.name"
@@ -44,12 +59,12 @@
                                             </el-option>
                                         </el-select>
                                     </el-form-item>
-                                </el-col>
+                                </el-col> -->
 
                             </el-row>
 
-                            <el-row :gutter="100">
-                                <el-col :span="12">
+                            <el-row :gutter="350">
+                                <el-col :span="12" class="drag-box-col">
                                     <div class="drag-box-item">
                                         <div class="item-title">待选前置用例</div>
                                         <draggable v-model="unselected" :options="dragOptions">
@@ -62,18 +77,32 @@
                                     </div>
                                 </el-col>
 
-                                <el-col :span="12">
+                                <el-col :span="12" class="drag-box-col">
                                     <div class="drag-box-item">
                                         <div class="item-title">已选前置用例</div>
-                                        <draggable v-model="selected" :options="dragOptions" @change="changeResult()">
+                                        <draggable v-model="selected_testcase" :options="dragOptions" @change="changeResult()">
                                             <transition-group tag="div" class="item-ul">
-                                                <div v-for="item in selected" class="drag-list" :key="item.id">
+                                                <div v-for="item in selected_testcase" class="drag-list" :key="item.id">
                                                     {{ item.name }}
                                                 </div>
                                             </transition-group>
                                         </draggable>
                                     </div>
                                 </el-col>
+
+                                <!-- <el-col :span="12" class="drag-box-col">
+                                    <div class="drag-box-item">
+                                        <div class="item-title">已选后置用例</div>
+                                        <draggable v-model="selected_testcase_after" :options="dragOptions" @change="changeResultAfter()">
+                                            <transition-group tag="div" class="item-ul">
+                                                <div v-for="item in selected_testcase_after" class="drag-list" :key="item.id">
+                                                    {{ item.name }}
+                                                </div>
+                                            </transition-group>
+                                        </draggable>
+                                    </div>
+                                </el-col> -->
+
                             </el-row>
 
                         </el-form>
@@ -83,6 +112,7 @@
                 <el-tab-pane label="请求信息">
                     <!--<div class="form-box">-->
                         <el-form style="margin: 0 0 0 10px">
+
                             <el-form-item>
                                 <el-input placeholder="Enter request URL"
                                           v-model="apiMsgData.url"
@@ -178,8 +208,8 @@
                                 <el-form :inline="true" class="demo-form-inline" style="margin-top: 10px">
                                     <el-radio-group v-model="apiMsgData.choiceType">
                                         <el-radio label="data">form-data</el-radio>
+                                        <el-radio label="files">files</el-radio>
                                         <el-radio label="json">json</el-radio>
-                                        <el-radio label="files">form-data-files</el-radio>
                                         <!--<el-radio label="text">text</el-radio>-->
                                     </el-radio-group>
                                     <el-button type="primary" size="mini"
@@ -258,53 +288,21 @@
                                     </el-table-column>
                                 </el-table>
 
-                                <el-table :data="apiMsgData.filesVariable"
-                                          size="mini"
-                                          stripe
-                                          :show-header="false" height="500"
-                                          style="background-color: rgb(250, 250, 250)"
-                                          v-if="apiMsgData.choiceType === 'files'"
-                                          :row-style="{'background-color': 'rgb(250, 250, 250)'}">
-                                    <el-table-column label="Key" header-align="center" minWidth="100">
-                                        <template slot-scope="scope">
-                                            <el-input v-model="scope.row.key" size="mini" placeholder="key">
-                                            </el-input>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="type" header-align="center" width="100">
-                                        <template slot-scope="scope">
-                                            <el-select v-model="scope.row.param_type" size="mini">
-                                                <el-option v-for="item in paramTypes" :key="item" :value="item">
-                                                </el-option>
-                                            </el-select>
-                                        </template>
-                                    </el-table-column>
-                                    <el-table-column label="Value" header-align="center" minWidth="200">
-                                        <template slot-scope="scope">
-                                            <div>
-                                                <el-input v-model="scope.row.value"
-                                                          :id="'files_input' + scope.$index "
-                                                          type="textarea"
-                                                          rows=1
-                                                          @focus="showLine('files_input', scope.$index)"
-                                                          @input="changeLine()"
-                                                          @blur="resetLine()"
-                                                          size="mini"
-                                                          resize="none" placeholder="value">
-                                                </el-input>
-                                            </div>
+                                <div v-if="apiMsgData.choiceType === 'files'">
+                                <el-upload
+                                class="upload-demo"
+                                :action="uploadUrl"
+                                :headers="headers"
+                                :on-change="handleChange"
+                                drag        
+                                :file-list="apiMsgData.filesVariable"               
+                                >
+                                <i class="el-icon-upload"></i>
+                                <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+                                </el-upload>
 
-                                        </template>
-                                    </el-table-column>
-
-                                    <el-table-column property="value" label="操作" header-align="center" width="80">
-                                        <template slot-scope="scope">
-                                            <el-button type="danger" icon="el-icon-delete" size="mini"
-                                                       @click.native="delTableRow('filesVariable',scope.$index)">
-                                            </el-button>
-                                        </template>
-                                    </el-table-column>
-                                </el-table>
+                                
+                                </div>
 
                             </el-tab-pane>
                             <el-tab-pane label="Extract" name="third">
@@ -382,7 +380,7 @@
                     <!--</div>-->
                 </el-tab-pane>
 
-                <el-tab-pane label="环境变量|参数化|请求钩子">
+                <el-tab-pane label="环境变量|参数化|请求钩子|skip">
 
                     <el-tabs style="margin: 0 0 0 10px" v-model="otherShow">
                         <el-tab-pane label="环境变量" name="first">
@@ -486,6 +484,29 @@
                                 </el-table-column>
                             </el-table>
                         </el-tab-pane>
+
+                        <el-tab-pane label="skip" name="fifth">
+                            <el-table :data="apiMsgData.is_skip" size="mini" stripe :show-header="false"
+                                      class="h-b-e-a-style"
+                                      :row-style="{'background-color': 'rgb(250, 250, 250)'}">
+                                <el-table-column property="key"  width="250px"  header-align="center" minWidth="100">
+                                    <template slot-scope="scope">
+                                    <el-select  v-model="scope.row.key" placeholder="是否跳过" clearable>
+                                        <el-option label="直接跳过" value="skip"></el-option>
+                                        <el-option label="条件成立时跳过" value="skipIf"></el-option>
+                                        <el-option label="条件不成立时跳过" value="skipUnless"></el-option>
+                                    </el-select>
+                                    </template>
+                                </el-table-column>
+
+                                <el-table-column property="value" width="250px" minWidth="100">
+                                    <template slot-scope="scope">
+                                    <el-input v-model="scope.row.value" placeholder="条件"></el-input>
+                                    </template>
+                                </el-table-column>
+
+                            </el-table>
+                        </el-tab-pane>
                     </el-tabs>
 
                 </el-tab-pane>
@@ -494,47 +515,47 @@
 
             <el-row>
                 <el-col :span="2">
-                    <el-button type="warning"  @click="onDebug()">调试</el-button>
+                <el-button type="warning"  @click="onDebug()">调试</el-button>
                 </el-col>
                 <el-col :span="2">
                     <el-button type="primary" @click="onSubmit()">提交</el-button>
                 </el-col>
                 <el-col :span="2">
-                    <el-button @click="resetForm('form')">取消</el-button>
+                    <el-button @click="close_page()">取消</el-button>
                 </el-col>
             </el-row>
-            <template v-if="showDebug">
-                <hr style="margin: 10px 0;" />
-                <div style="margin-bottom: 10px;">
-                    <el-button type="info" @click="clearDebug">清空结果</el-button>
-                    <!-- 提取按钮只针对最后一个响应页有效 -->
-                    <el-button type="primary" @click="getSelectedExtract">提取数据</el-button>
-                    <el-button type="primary" @click="getSelectedAssert">提取断言</el-button>
-                </div>
-                <el-tabs type="border-card" v-model="tabs_index" >
-                    <template v-for="(item, index) in treeData">
-                        <el-tab-pane
-                                :label="caseMetas[index].flag ? ('响应'+String(index+1) +':'+ caseMetas[index].name)+'(pass)' : ('响应'+String(index+1)+':' + caseMetas[index].name)+'(fail)'"
-                                :key="index" :name="String(index)">
-                            <!-- 无论对错，均显示断言信息 -->
-                            <template v-if="true">
-                                <!-- 报错的响应页，会显示当前响应的分析信息 -->
-                                <template v-if="!caseMetas[index].flag">
-                                    <el-button type="danger" @click="traceback = !traceback">Traceback</el-button>
-                                </template>
-                                <el-button type="primary" @click="validators = !validators">Validators</el-button>
-                                <el-row  :gutter="32">
-                                    <el-col :span="12">
-                                        <div v-if="!caseMetas[index].flag&&traceback" class="traceback">
+                <template v-if="showDebug">
+      <hr style="margin: 10px 0;" />
+      <div style="margin-bottom: 10px;">
+        <el-button type="info" @click="clearDebug">清空结果</el-button>
+        <!-- 提取按钮只针对最后一个响应页有效 -->
+        <el-button type="primary" @click="getSelectedExtract">提取数据</el-button>
+        <el-button type="primary" @click="getSelectedAssert">提取断言</el-button>
+      </div>
+      <el-tabs type="border-card" v-model="tabs_index" >
+        <template v-for="(item, index) in treeData">
+            <el-tab-pane
+              :label="caseMetas[index].flag ? ('响应'+String(index+1) +':'+ caseMetas[index].name)+'(pass)' : ('响应'+String(index+1)+':' + caseMetas[index].name)+'(fail)'"
+              :key="index" :name="String(index)">
+              <!-- 无论对错，均显示断言信息 -->
+              <template v-if="true">
+                <!-- 报错的响应页，会显示当前响应的分析信息 -->
+                <template v-if="!caseMetas[index].flag">
+                  <el-button type="danger" @click="traceback = !traceback">Traceback</el-button>
+                </template>
+                <el-button type="primary" @click="validators = !validators">Validators</el-button>
+                <el-row  :gutter="32">
+                  <el-col :span="12">
+                    <div v-if="!caseMetas[index].flag&&traceback" class="traceback">
                       <pre class="validatorPre">
                         {{caseMetas[index].attachment}}
                       </pre>
-                                        </div>
-                                    </el-col>
-                                    <el-col :span="12">
-                                        <div v-if="validators" class="validators">
-                                            <el-collapse style="border: none;">
-                                                <template v-for="(validator, vindex) in caseMetas[index].validators">
+                    </div>
+                  </el-col>
+                  <el-col :span="12">
+                    <div v-if="validators" class="validators">
+                      <el-collapse style="border: none;">
+                        <template v-for="(validator, vindex) in caseMetas[index].validators">
                           <span :name="String(vindex)" :key="vindex" :style="{background: validator.check_result === 'pass' ? 'green' : 'red'}">
                             {{`第${vindex+1}项 -- ${validator.check}`}}
                             <pre slot="content" :key="vindex" class="validatorPre">
@@ -543,24 +564,32 @@
                             【检查结果】:${validator.check_result}`}}
                             </pre>
                           </span >
-                                                </template>
-                                            </el-collapse>
-                                        </div>
-                                    </el-col>
-                                </el-row>
-                            </template>
-                            <el-tree :data="item"  :props="defaultProps" :show-checkbox="caseMetas[index].name === '当前用例'" ref="tree"></el-tree>
-                        </el-tab-pane>
-                    </template>
-                </el-tabs>
-            </template>
-            <div class="position-box"></div>
-
+                        </template>
+                      </el-collapse>
+                    </div>
+                  </el-col>
+                </el-row>
+              </template>
+              <el-tree :data="item"  :props="defaultProps" :show-checkbox="caseMetas[index].name === '当前用例'" ref="tree"></el-tree>
+            </el-tab-pane>
+        </template>
+      </el-tabs>
+    </template>
+    <div class="position-box"></div>
         </div>
 
         <v-contextmenu ref="contextmenu">
             <v-contextmenu-item @click="handleClick">clear</v-contextmenu-item>
         </v-contextmenu>
+
+        <!-- 切换项目提示框 -->
+        <el-dialog title="是否切换项目" :visible.sync="switchVisible" width="300px" center>
+            <div class="del-dialog-cnt">切换项目将清空前置用例，是否确定切换？</div>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="changeProjectCancle">取 消</el-button>
+                <el-button type="primary" @click="getModulesByProjectID(selected_project_id)">确 定</el-button>
+            </span>
+        </el-dialog>
 
         <!-- 编辑弹出框 -->
         <el-dialog title="编辑用例" :visible.sync="editVisible" width="28%" center>
@@ -575,20 +604,20 @@
 
                 <el-form-item label="选择项目" required>
                     <el-select v-model="selected_project_id" placeholder="请选择"
-                               @change="getInterfacesByProjectID(selected_project_id)">
+                               @change="getModulesByProjectID(selected_project_id)" disabled>
                         <el-option v-for="(item, key) in project_names" :key="key"
                                    :label="item.name" :value="item.id">
                         </el-option>
                     </el-select>
                 </el-form-item>
 
-                <el-form-item label="选择接口" required>
-                    <el-select v-model="selected_interface_id" placeholder="请选择">
-                        <el-option v-for="(item, key) in interfaces" :key="key" :label="item.name"
+                <el-form-item label="选择模块" required>
+                    <el-select v-model="selected_module_id" placeholder="请选择">
+                        <el-option v-for="(item, key) in modules" :key="key" :label="item.name"
                                    :value="item.id">
                         </el-option>
                     </el-select>
-                </el-form-item>
+                </el-form-item> 
 
             </el-form>
             <span slot="footer" class="dialog-footer">
@@ -596,16 +625,17 @@
                 <el-button type="primary" @click="saveEdit">确 定</el-button>
             </span>
         </el-dialog>
+
         <!-- 调试弹框 -->
         <el-dialog title="调试" :visible.sync="debugVisible" width="30%" center>
             <el-form  label-width="120px">
                 <el-form-item label="运行环境">
                     <el-select v-model="env_id" clearable placeholder="请选择">
                         <el-option
-                                v-for="item in envs_id_names"
-                                :key="item.id"
-                                :label="item.name"
-                                :value="item.id"
+                            v-for="item in envs_id_names"
+                            :key="item.id"
+                            :label="item.name"
+                            :value="item.id"
                         ></el-option>
                     </el-select>
                 </el-form-item>
@@ -615,50 +645,50 @@
                 <el-button type="primary" @click="debugRun">运行</el-button>
             </span>
         </el-dialog>
+
     </div>
 </template>
 
 <script>
-    import draggable from 'vuedraggable'
+    import draggable from 'vuedraggable';
+    import bus from '../common/bus';
     import {
         projects_names,
-        interfaces_by_project_id,
-        configures_by_interface_id,
-        testcases_by_interface_id,
+        modules_by_project_id,
+        configures_all,
+        testcases_by_module_id,
         get_detail_testcase,
         update_testcase,
-        envs_names, debug
+        get_detail_configure,
+        envs_names,
+        debug,
+        upload_file,
     } from '../../api/api';
+    import host from '../../api/api';
 
     export default {
         beforeRouteEnter (to, from, next) {
             next(vm => {
                 vm.current_testcase_id = vm.$route.params.id;
-                console.log(" vm.$route.params.id", vm.$route.params.id);
-                console.log("vm.current_testcase_id",vm.current_testcase_id);
-                vm.getTestcaseDetail(vm.$route.params.id);
+                vm.getTestcaseDetail();
             });
             next()
         },
         beforeRouteUpdate (to, from, next) {
-            console.log("beforeRouteUpdate的第一个参数to",to)
-            console.log("beforeRouteUpdate的第一个参数to的params",params)
             this.current_testcase_id = to.params.id;
-            console.log("此时current_testcase_id",this.current_testcase_id)
-            this.getTestSuiteDetail();
-            this.getTestcaseDetail(this.current_testcase_id);
-            console.log("此时current_testcase_id",this.current_testcase_id)
+            this.getTestcaseDetail();
             next()
         },
 
         name: 'baseform',
         data: function () {
             return {
+                uploadUrl:'',
                 current_testcase_id: null,
                 switchVisible:false,
                 editVisible: false,   // 新增项目弹框是否显示标识
                 methods: ['POST', 'GET', 'PUT', 'DELETE'],  // 请求方法
-                types: ['data', 'json','files','params'],  // 请求类型
+                types: ['data', 'json', 'params'],  // 请求类型
                 ParamViewStatus: false,             // params按钮状态
                 comparators: [{'value': 'equals'}, {'value': 'contains'}, {'value': 'contained_by'},
                     {'value': 'startswith'}, {'value': 'endswith'}, {'value': 'regex_match'},
@@ -675,16 +705,17 @@
                     choiceType: 'json',
                     param: [{key: null, value: null}],
                     header: [{key: null, value: null}],
+                    // header: [],
                     variable: [{key: null, value: null, param_type: 'string'}],
-                    filesVariable: [{ key: null, value: null, param_type: 'string' }],
+                    filesVariable: [],
                     jsonVariable: '',
                     extract: [{key: null, value: null}],
                     validate: [{key: null, value: null, comparator: 'equals', param_type: 'string'}],
-
                     globalVar: [{key: null, value: null, param_type: 'string'}],
                     parameterized: [{key: null, value: null}],
                     setupHooks: [{key: null}],
                     teardownHooks: [{key: null}],
+                    is_skip:[{key: null, value: null}],
                 },
                 bodyShow: 'second',
                 otherShow: 'first',
@@ -697,16 +728,23 @@
                     ghostClass: 'ghost-style'
                 },
                 project_names: [],
+                choose_selected_module_id: null,
                 selected_project_id: null,
-                selected_interface_id: null,
+                before_selected_project_id:null,
+                selected_module_id: null,
                 selected_configure_id: null,
-                selected_testcase_id: [],   // 已选择的用例
+                selected_testcase: [],   // 已选择的用例
+                selected_testcase_id:[],
+                selected_testcase_after: [],
+                selected_testcase_after_id: [],
                 testcase_name: null,  // 用例名称
                 author: '',     // 用例编写人员
-                interfaces: [],
+                modules: [],
+                choose_modules: [],
                 configures: [],
                 unselected: [],     // 未选择的用例
-                selected: [],   // 已选择的用例
+                configure_globalVar:[],
+                configure_header:[],
                 env_id:'',
                 envs_id_names:[],
                 debugVisible:false,
@@ -718,26 +756,60 @@
                 traceback: false,
                 validators: false,
                 defaultProps: {
-                    children: 'children',
-                    label: 'title'
+                children: 'children',
+                label: 'title'
                 },
                 is_scroll:false,
-                tabs_index:0,
+                tabs_index:0,               
             }
         },
+      
         created() {
             this.getProjectNames();
+            this.getConf();
             this.getEnvsIdNames();
-            // this.getTestcaseDetail(this.current_testcase_id)
-            // console.log("此时current_testcase_id",this.current_testcase_id)
-            // console.log("此时current_testcase_id",this.current_testcase_id)
-
+            this.uploadUrl = host +"/testcases/upload_file/"  ;
+            
         },
         components: {
             draggable,
             editor: require('vue2-ace-editor'),
         },
         methods: {
+            handleChange(file, fileList) {
+            this.apiMsgData.filesVariable = fileList;
+        },
+            uploadError(){
+                console.log(11111);
+
+        },
+            uploadFile(params){
+                const formData = new FormData()
+                const file = params.file
+                formData.append('file', file)         
+                upload_file(formData).
+                then((response)=>{
+                    file["path"]=response.data[0]
+                    this.apiMsgData.filesVariable.push(file)
+                    console.log(this.apiMsgData.filesVariable)
+
+                })
+                .catch(error => {
+                    this.$message.error('上传失败');
+                    // if this.apiMsgData.filesVariable.length
+                    console.log(this.apiMsgData.filesVariable)
+                    this.apiMsgData.filesVariable.push(file)
+                    // console.log(this.apiMsgData.filesVariable)
+                    this.apiMsgData.filesVariable.pop()
+                    // console.log(this.apiMsgData.filesVariable)
+                    })
+
+            },
+            close_page(){
+                this.$router.go(-1);
+                bus.$emit("close_current_tags");
+                
+            },
             getEnvsIdNames() {
                 envs_names()
                     .then((response) => {
@@ -747,25 +819,93 @@
                         this.$message.error('服务器错误');
                     });
             },
+            changeProjectCancle(){
+                this.selected_project_id = this.before_selected_project_id;
+                this. switchVisible = false;
+
+            },
+            getConfigureDetail(selected_configure_id){
+                if(this.configure_globalVar){
+                    this.configure_globalVar.forEach(element =>{
+                        this.apiMsgData.globalVar = this.apiMsgData.globalVar.filter((item) =>{
+                            return item.key !== element.key;
+                        })
+                    })
+
+                };
+                if(this.configure_header){
+                    this.configure_header.forEach(element =>{
+                        this.apiMsgData.header = this.apiMsgData.header.filter((item) =>{
+                            return item.key !== element.key;
+                        })
+                    })
+
+                }
+                if(selected_configure_id){
+                    get_detail_configure(selected_configure_id)
+                    .then(response => {
+                        this.apiMsgData.globalVar = this.apiMsgData.globalVar.filter((item) =>{
+                            return item.key !== null;
+                        })
+                        response.data.globalVar.forEach(element =>{
+                            this.apiMsgData.globalVar.push(element)
+                        });
+                        this.apiMsgData.header = this.apiMsgData.header.filter((item) =>{
+                            return item.key !== null;
+                        })
+                        response.data.header.forEach(element =>{
+                            this.apiMsgData.header.push(element)
+                        });
+                        this.configure_globalVar = response.data.globalVar;
+                        this.configure_header = response.data.header;
+                        
+                    })
+                    .catch(error => {
+                        this.$message.error('服务器错误');
+                    })
+
+                };
+            },
+            getConfigureFirstDetail(selected_configure_id){
+                if(selected_configure_id){
+                    get_detail_configure(selected_configure_id)
+                    .then(response => {
+                        this.configure_globalVar = response.data.globalVar;
+                        this.configure_header = response.data.header;
+                        ;
+                        
+                    })
+                    .catch(error => {
+                        this.$message.error('服务器错误');
+                    })
+
+                };
+
+                
+            },
             editorInit() {
                 require('brace/ext/language_tools');
                 require('brace/mode/json');
                 require('brace/theme/chrome');
                 require('brace/snippets/json')
             },
-            onDebug() {
-                if (this.apiMsgData.url.length === 0){
-                    this.$message.error('没有输入请求URL');
-                    return
-                }
-                if (this.selected_project_id === null||this.selected_interface_id === null){
-                    this.$message.error('未选择所属项目或者模块!');
-                    return
-                }
-                this.envs_id
-                this.debugVisible = true;
-            },
             onSubmit() {
+                if(this.apiMsgData.is_skip[0].key == "skip"){
+                    if(!this.apiMsgData.is_skip[0].value){
+                        this.$message.error('请输入跳过原因');
+                        return
+                    }
+                }else if(this.apiMsgData.is_skip[0].key == "skipIf" ||this.apiMsgData.is_skip[0].key == "skipUnless"){
+
+                        if(!this.apiMsgData.is_skip[0].value){
+                            this.$message.error('请输入跳过条件');
+                            return
+                        }
+                }
+
+        
+                  
+
                 if (this.apiMsgData.url.length === 0){
                     this.$message.error('没有输入请求URL');
                     return
@@ -780,6 +920,28 @@
 
                 this.editVisible = true;
             },
+            switchProject(){
+                if(this.selected_testcase.length != 0 || this.selected_testcase_after.length){
+                    this.switchVisible = true;
+                }
+                else{
+                    this.getModulesByProjectID(this.selected_project_id);
+                }
+                
+
+            }, 
+            onDebug() {
+                if (this.apiMsgData.url.length === 0){
+                    this.$message.error('没有输入请求URL');
+                    return
+                }
+                if (this.selected_project_id === null || this.choose_selected_module_id === null){
+                    this.$message.error('未选择所属项目或者模块!');
+                    return
+                }
+                this.debugVisible = true;
+            },
+  
             // 处理数据1, 有param_type, 返回js对象
             handleData1(request_data, msg){
                 let one_data = {};
@@ -888,16 +1050,9 @@
                         return []
                     }
                     let value = request_data[i].value;
-                    console.log("value: ", value);
                     let one_data = {};
-                    // 如果参数化值是列表的形式(不是函数也不是csv), 将列表转化为json数组
-                    if (/^\[/.test(value)) {
-                        value = JSON.parse(value);
-                    }
-
                     one_data[key] = value;
-                    data_arr.push(one_data);
-                    console.log("value: ", value);
+                    data_arr.push(one_data)
                 }
                 return data_arr
             },
@@ -966,6 +1121,8 @@
 
             // 保存编辑
             saveEdit() {
+                this.changeResult();
+                this.changeResultAfter();
                 if (this.testcase_name === null){
                     this.$message.error('用例名称不能为空!');
                     return
@@ -976,23 +1133,47 @@
                     return
                 }
 
-                if (this.selected_project_id === null || this.selected_interface_id === null){
-                    this.$message.error('未选择所属项目或者接口!');
+                if (this.selected_project_id === null || this.selected_module_id === null){
+                    this.$message.error('未选择所属项目或者模块!');
                     return
                 }
 
                 if (this.selected_configure_id === '') {
                     this.selected_configure_id = null;
                 }
-                let include = {"config": this.selected_configure_id, "testcases": this.selected_testcase_id};
+                let include = {"config": this.selected_configure_id, "testcases": this.selected_testcase_id,"testcases_after":this.selected_testcase_after_id};
 
                 let handle_url = this.apiMsgData.url.trim().split('?', 1)[0];   // 去掉前后空格之后, 以问号进行切割, 取第一部分
-                let datas = {
+                let datas={}
+                if (this.apiMsgData.is_skip[0].key){
+                    datas = {
                     "name": this.testcase_name,           // 用例名称
                     "include": include,       // 用例执行前置顺序
-                    "interface": {
+                    "module": {
                         "pid": this.selected_project_id,      // 项目ID
-                        "iid": this.selected_interface_id,      // 接口ID
+                        "iid": this.selected_module_id,      // 模块ID
+                    },
+                    "author": this.author,         // 用例编写人员
+                    "request": {          // 请求信息
+                        "test": {
+                            "name": this.testcase_name,
+                            [this.apiMsgData.is_skip[0].key]:this.apiMsgData.is_skip[0].value,
+                            "request": {
+                                "url": handle_url,
+                                "method": this.apiMsgData.method,
+                                "file":this.apiMsgData.filesVariable,
+                            },
+                        }
+                    },
+                };
+
+                }else{
+                    datas = {
+                    "name": this.testcase_name,           // 用例名称
+                    "include": include,       // 用例执行前置顺序
+                    "module": {
+                        "pid": this.selected_project_id,      // 项目ID
+                        "iid": this.selected_module_id,      // 模块ID
                     },
                     "author": this.author,         // 用例编写人员
                     "request": {          // 请求信息
@@ -1000,11 +1181,13 @@
                             "name": this.testcase_name,
                             "request": {
                                 "url": handle_url,
-                                "method": this.apiMsgData.method
-                            }
+                                "method": this.apiMsgData.method,
+                                "file":this.apiMsgData.filesVariable,
+                            },
+                            
                         }
                     },
-                };
+                };};
 
                 // 处理查询字符串参数
                 let params_data = this.apiMsgData.param;
@@ -1039,7 +1222,7 @@
                     if (request_data.length !== 0) {
                         datas.request.test.request['json'] = JSON.parse(request_data)
                     }
-                } else {
+                }else {
                     paramsType = 'data';
                     request_data = this.apiMsgData.variable;
                     request_data.splice(-1, 1);
@@ -1057,7 +1240,6 @@
                 parameterized.splice(-1, 1);
                 if (parameterized.length !== 0) {
                     let new_data = this.handleData22(parameterized, '参数化参数');
-                    console.log("new_data", new_data);
                     if (new_data.length === 0) {
                         return
                     }
@@ -1138,18 +1320,16 @@
                 update_testcase(this.current_testcase_id, datas)
                     .then(response => {
                         this.editVisible = false;
-                        let that = this;
                         this.$message.success(`更新用例成功`);
-                        // 1秒钟之后, 执行刷新
-                        setInterval(function () {
-                            that.$router.go();
-                        }, 1000);
+                        // 1秒钟之后, 执行刷新      
+                        this.close_page();
+                   
                     })
                     .catch(error => {
                         this.editVisible = false;
                         if (typeof error === 'object' && error.hasOwnProperty('name')) {
                             console.log(error);
-                            this.$message.error('用例名称已存在');
+                            this.$message.error(error.name[0]);
                         } else {
                             console.log(error);
                             this.$message.error('服务器错误');
@@ -1157,21 +1337,24 @@
                     })
 
             },
+
             debugRun() {
-                // if(!this.envs_id){
-                //     this.$message.error("请选择运行环境");
-                //     return
-                // }
+                if(!this.env_id){
+                    this.$message.error('请选择运行环境!');
+                    return
+                }
                 this.changeResult();
-                let include = {"config": this.selected_configure_id, "testcases": this.selected_testcase_id};
+                this.changeResultAfter();
+
+                let include = {"config": this.selected_configure_id, "testcases": this.selected_testcase_id,"testcases_after":this.selected_testcase_after_id};
 
                 let handle_url = this.apiMsgData.url.trim().split('?', 1)[0];   // 去掉前后空格之后, 以问号进行切割, 取第一部分
                 let datas = {
                     "name": "当前用例",           // 用例名称
                     "include": include,       // 用例执行前置顺序
-                    "interface": {
+                    "module": {
                         "pid": this.selected_project_id,      // 项目ID
-                        "iid": this.selected_interface_id,      // 接口ID
+                        "iid": this.choose_selected_module_id,      // 模块ID
                     },
                     "author": "无",         // 用例编写人员
                     "request": {          // 请求信息
@@ -1179,8 +1362,10 @@
                             "name": "当前用例",
                             "request": {
                                 "url": handle_url,
-                                "method": this.apiMsgData.method
+                                "method": this.apiMsgData.method,
+                                "file":this.apiMsgData.filesVariable
                             }
+                            
                         }
                     },
                 };
@@ -1198,28 +1383,13 @@
 
                 let paramsType = '';
                 let request_data = null;
-                var paramType;
-                if (this.apiMsgData.choiceType === 'files') {
-                    paramType = 'files';
-                    request_data = this.apiMsgData.filesVariable;
-                    request_data.splice(-1, 1);
-                    if (request_data.length !== 0) {
-                        let new_data = this.handleData1(request_data, 'form-data参数');
-                        if (new_data.length === 0) {
-                            return;
-                        }
-                        datas.request.test.request['files'] = new_data;
-                        console.log("datas.request.test.request['files']",new_data)
-                    }
-                }
                 if (this.apiMsgData.choiceType === 'json'){
                     paramsType = 'json';
                     request_data = this.apiMsgData.jsonVariable;
                     if (request_data.length !== 0) {
-                        datas.request.test.request['json'] = JSON.parse(request_data);
-                        console.log("JSON.parse(request_data)",JSON.parse(request_data))
+                        datas.request.test.request['json'] = JSON.parse(request_data)
                     }
-                } else {
+                }else {
                     paramsType = 'data';
                     request_data = this.apiMsgData.variable;
                     request_data.splice(-1, 1);
@@ -1237,7 +1407,6 @@
                 parameterized.splice(-1, 1);
                 if (parameterized.length !== 0) {
                     let new_data = this.handleData22(parameterized, '参数化参数');
-                    console.log("new_data", new_data);
                     if (new_data.length === 0) {
                         return
                     }
@@ -1286,10 +1455,7 @@
                         return
                     }
                     datas.request.test['validate'] = new_data;
-                } else {
-                    this.$message.error('未设置Assert断言!');
-                    return
-                }
+                } 
 
                 // setup_hooks处理
                 let setup_hooks = this.apiMsgData.setupHooks;
@@ -1315,29 +1481,32 @@
 
                 datas.include = JSON.stringify(datas.include);
                 datas.request = JSON.stringify(datas.request);
-                console.log(datas.request)
+                console.log(datas.request);
                 datas.env_id = this.env_id
-                debug(this.current_testcase_id,datas).then(response =>{
-                    this.showDebug = true;
-                    this.$message.success(`调试成功`);
-                    this.treeData = response.data.tree;
-                    this.treeDataBackup = response.data.tree;
-                    this.caseMetas = response.data.case_metas;
-                    this.caseMetasBackup = response.data.case_metas;
-                    this.tabs_index = String(this.treeData.length-1);
-                    this.debugVisible = false;
-                    this.$nextTick(function () {
-                        document.getElementsByClassName('position-box')[0].scrollIntoView();
+                debug(datas)
+                    .then(response => {
+                        this.showDebug = true;
+                        this.$message.success(`调试成功`);
+                        this.treeData = response.data.tree;
+                        this.treeDataBackup = response.data.tree;
+                        this.caseMetas = response.data.case_metas;
+                        this.caseMetasBackup = response.data.case_metas;
+                        this.tabs_index = String(this.treeData.length-1);
+                        this.debugVisible = false;
+                        this.$nextTick(function () {
+                            document.getElementsByClassName('position-box')[0].scrollIntoView();
+      })
+
                     })
-                }).catch(error => {
-                    if (typeof error === 'object' && error.hasOwnProperty('name')) {
-                        console.log(error);
-                        this.$message.error(error.name[0]);
-                    } else {
-                        console.log(error);
-                        this.$message.error('服务器错误');
-                    }
-                })
+                    .catch(error => {
+                        if (typeof error === 'object' && error.hasOwnProperty('name')) {
+                            console.log(error);
+                            this.$message.error(error.name[0]);
+                        } else {
+                            console.log(error);
+                            this.$message.error('服务器错误');
+                        }
+                    })
 
             },
             clearDebug() {
@@ -1350,73 +1519,75 @@
             rightLabel(index, reqName) {
                 return (h) => {
                     return h('div', {style: {color: 'green'}}, [ // '#19be6b'
-                        h('Icon', {
-                            props: {
-                                type: 'md-checkmark-circle'
-                            }
-                        }),
-                        h('span', `响应${index}:` + reqName)
+                    h('Icon', {
+                        props: {
+                        type: 'md-checkmark-circle'
+                        }
+                    }),
+                    h('span', `响应${index}:` + reqName)
                     ])
                 }
             },
             wrongLabel(index, reqName) {
                 return (h) => {
                     return h('div', {style: {color: 'red'}}, [ // '#ed4014'
-                        h('Icon', {
-                            props: {
-                                type: 'md-close-circle'
-                            }
-                        }),
-                        h('span', `响应${index}:` + reqName)
+                    h('Icon', {
+                        props: {
+                        type: 'md-close-circle'
+                        }
+                    }),
+                    h('span', `响应${index}:` + reqName)
                     ])
                 }
             },
             getSelectedAssert() {
-                // 只取当前的请求结果
-                this.apiMsgData.validate = this.apiMsgData.validate.filter((item) =>{
-                    return item.key !== null;
-                })
-                let treeEle = this.$refs.tree[this.tabs_index]
-                let checkedNodes = treeEle.getCheckedNodes()
-                // 只取末节点
-                checkedNodes = checkedNodes.filter(item => {
-                    return String(item.children) === 'undefined'
-                })
-                if (checkedNodes.length === 0) {
-                    this.$message.warning('请先勾  选需要提取的数据')
-                    return
-                }
-                for (let i = 0; i < checkedNodes.length; i++) {
-                    let is_push = true;
-                    let validateType = null;
-                    let expected = checkedNodes[i].expect;
-                    if (typeof expected === 'number') {
-                        validateType = expected.toString().indexOf('.') > -1 ? 'float' : 'int'
-                    } else if (typeof expected === 'object') {
-                        // 平台未支持对象类型数据的校验，所以此处转成字串类型，但是对象类型的比较会失败
-                        validateType = 'string'
-                        expected = JSON.stringify(expected)
-                    } else {
-                        validateType = typeof expected
-                        expected = String(expected)
-                    };
-                    this.apiMsgData.validate.forEach((item,index,arr)=>{
-                        if(item.key ==checkedNodes[i].path.trim() ){
-                            this.apiMsgData.validate[index].value=expected;
-                            this.apiMsgData.validate[index].param_type=validateType
-                            is_push = false
-                        }}
-                    );
-                    if(is_push){
-                        this.apiMsgData.validate.push({
-                                key: checkedNodes[i].path.trim(),
-                                value: expected,
-                                comparator: "equals",
-                                param_type: validateType,
-                            }
-                        )};
-                }},
-            getSelectedExtract() {
+            // 只取当前的请求结果
+            this.apiMsgData.validate = this.apiMsgData.validate.filter((item) =>{
+                return item.key !== null;
+            })
+            let treeEle = this.$refs.tree[this.tabs_index]
+            let checkedNodes = treeEle.getCheckedNodes()
+            // 只取末节点
+            checkedNodes = checkedNodes.filter(item => {
+                return String(item.children) === 'undefined'
+            })
+            if (checkedNodes.length === 0) {
+                this.$message.warning('请先勾  选需要提取的数据')
+                return
+            }
+            for (let i = 0; i < checkedNodes.length; i++) {
+                let is_push = true;
+                let validateType = null;
+                let expected = checkedNodes[i].expect;
+                if (typeof expected === 'number') {
+                validateType = expected.toString().indexOf('.') > -1 ? 'float' : 'int'
+                } else if (typeof expected === 'object') {
+                // 平台未支持对象类型数据的校验，所以此处转成字串类型，但是对象类型的比较会失败
+                validateType = 'string'
+                expected = JSON.stringify(expected)
+                } else {                  
+                validateType = typeof expected
+                expected = String(expected)
+                };
+                this.apiMsgData.validate.forEach((item,index,arr)=>{
+                    if(item.key ==checkedNodes[i].path.trim() ){
+                        this.apiMsgData.validate[index].value=expected;
+                        this.apiMsgData.validate[index].param_type=validateType
+                        is_push = false
+                    }}
+                );
+                if(is_push){
+                this.apiMsgData.validate.push({
+                key: checkedNodes[i].path.trim(),
+                value: expected,
+                comparator: "equals",
+                param_type: validateType,
+                }  
+                )};
+            }
+
+            },
+            getSelectedExtract() {              
                 this.apiMsgData.extract = this.apiMsgData.extract.filter((item) =>{
                     return item.key !== null;
                 })
@@ -1439,12 +1610,12 @@
                         }}
                     );
                     if(is_push){
-                        this.apiMsgData.extract.push({
-                                key: checkedNodes[i].name,
-                                value: checkedNodes[i].path.trim(),
-                            }
-                        )}
-
+                    this.apiMsgData.extract.push({
+                    key: checkedNodes[i].name,
+                    value: checkedNodes[i].path.trim(),
+                    }  
+                    )}
+                
                 }
 
             },
@@ -1452,46 +1623,121 @@
                 projects_names()
                     .then((response) => {
                         this.project_names = response.data;
-                        console.log("create时触发的获取项目名称",this.project_names)
                     })
                     .catch(error => {
                         that.$message.error('服务器错误');
                     });
             },
-            getInterfacesByProjectID(pro_id) {
-                interfaces_by_project_id(pro_id)
+            getChooseModulesByProjectID(pro_id) {
+                modules_by_project_id(pro_id)
                     .then((response) => {
-                        this.interfaces = response.data;
-                    })
-                    .catch(error => {
-                        that.$message.error('服务器错误');
-                    });
-            },
-            getConfTestcaseByInterfaceID(interface_id) {
-                configures_by_interface_id(interface_id)
-                    .then((response) => {
-                        this.configures = response.data;
+                        this.choose_modules = response.data;
+                        if (response.data.length != 0){
+                            this.choose_selected_module_id = response.data[0].id;
+                            this.getTestcaseByModuleID(this.choose_selected_module_id);
+                        } else {
+                            this.choose_selected_module_id = null;
+                            this.unselected= null;
+
+                        }
                     })
                     .catch(error => {
                         that.$message.error('服务器错误');
                     });
 
-                testcases_by_interface_id(interface_id)
+            },
+            //初始化时，获取前置用例可选择的模块
+            getCModulesByProjectID(pro_id) {
+                modules_by_project_id(pro_id)
+                    .then((response) => {
+                        this.choose_modules = response.data;
+                    })
+                    .catch(error => {
+                        that.$message.error('服务器错误');
+                    });
+            },
+            //初始化时，获取当前用例所属模块
+            getModules(pro_id) {
+                modules_by_project_id(pro_id)
+                    .then((response) => {
+                        this.modules = response.data;
+     
+                    })
+                    .catch(error => {
+                        that.$message.error('服务器错误');
+                    });           
+            },
+            
+            getModulesByProjectID(pro_id) {
+                this.before_selected_project_id = pro_id;
+                modules_by_project_id(pro_id)
+                    .then((response) => {
+                        this.choose_modules = response.data;
+                        this.modules = response.data;
+                        if (response.data.length != 0){
+                            this.choose_selected_module_id = response.data[0].id;
+                            this.getTestcaseByModuleID(this.choose_selected_module_id);
+                            this.selected_module_id = response.data[0].id;
+                        } else {
+                            this.choose_selected_module_id = null;
+                            this.selected_module_id = null;
+                            this.unselected= null;
+
+                        }
+                    })
+                    .catch(error => {
+                        that.$message.error('服务器错误');
+                    }); 
+                    this.switchVisible = false;
+                    this.selected_testcase = [];
+                    this.selected_testcase_after = [];        
+            },
+            getConf() {
+                configures_all()
+                    .then((response) => {
+                        this.configures = response.data
+                    })
+                    .catch(error => {
+                        that.$message.error('服务器错误');
+                    });
+            },
+
+            getTestcaseByModuleID(choose_selected_module_id) {
+                testcases_by_module_id(choose_selected_module_id)
                     .then((response) => {
                         this.unselected = response.data;
+                        if (this.selected_testcase.length != 0){
+                            this.selected_testcase.forEach(element => {
+                            this.unselected = this.unselected.filter((item)=>{
+                            return item.id !== element.id;
+                             });
+                        });
+                        
+                        }
+                        if (this.selected_testcase_after.length != 0){
+                            this.selected_testcase_after.forEach(element => {
+                            this.unselected = this.unselected.filter((item)=>{
+                            return item.id !== element.id;
+                             });
+                        });
+                        
+                        }
+                        this.unselected = this.unselected.filter((item)=>{
+                            return item.id != this.current_testcase_id;
+                             });
                     })
                     .catch(error => {
                         that.$message.error('服务器错误');
                     });
             },
             changeResult() {
-                let len = this.selected.length;
+                let len = this.selected_testcase.length;
                 let text = "[";
                 for (let i = 0; i < len; i++) {
                     if (i === len - 1) {
-                        text += this.selected[i].id + "]";
+                        text += this.selected_testcase[i].id + "]";
                     } else {
-                        text += this.selected[i].id + ", ";
+                        text += this.selected_testcase[i].id + ", ";
                     }
 
                 }
@@ -1500,12 +1746,29 @@
                 }
                 this.selected_testcase_id = JSON.parse(text);
             },
+
+            changeResultAfter() {
+                let len = this.selected_testcase_after.length;
+                let text = "[";
+                for (let i = 0; i < len; i++) {
+                    if (i === len - 1) {
+                        text += this.selected_testcase_after[i].id + "]";
+                    } else {
+                        text += this.selected_testcase_after[i].id + ", ";
+                    }
+
+                }
+                if (len === 0) {
+                    text = "[]";
+                }
+                this.selected_testcase_after_id = JSON.parse(text);
+            },
             delTableRow(type, i) {
                 if (type === 'variable') {
                     this.apiMsgData.variable.splice(i, 1);
                 } else if (type === 'filesVariable') {
                     this.apiMsgData.filesVariable.splice(i, 1);
-                } else if (type === 'header') {
+                }else if (type === 'header') {
                     this.apiMsgData.header.splice(i, 1);
                 } else if (type === 'validate') {
                     this.apiMsgData.validate.splice(i, 1);
@@ -1513,23 +1776,23 @@
                     this.apiMsgData.extract.splice(i, 1);
                 } else if (type === 'param') {
                     this.apiMsgData.param.splice(i, 1);
-                } else if (type === 'globalVar') {
+                }else if (type === 'globalVar') {
                     this.apiMsgData.globalVar.splice(i, 1);
-                } else if (type === 'parameterized') {
+                }else if (type === 'parameterized') {
                     this.apiMsgData.parameterized.splice(i, 1);
-                } else if (type === 'setupHooks') {
+                }else if (type === 'setupHooks') {
                     this.apiMsgData.setupHooks.splice(i, 1);
-                } else if (type === 'teardownHooks') {
+                }else if (type === 'teardownHooks') {
                     this.apiMsgData.teardownHooks.splice(i, 1);
                 }
             },
             addTableRow(type) {
                 if (type === 'variable') {
-                    this.apiMsgData.variable.push({ key: null, value: null, param_type: 'string' });
+                    this.apiMsgData.variable.push({key: null, value: null, param_type: 'string'});
                 } else if (type === 'filesVariable') {
                     this.apiMsgData.filesVariable.push({ key: null, value: null, param_type: 'string' });
-                } else if (type === 'header') {
-                    this.apiMsgData.header.push({ key: null, value: null });
+                }else if (type === 'header') {
+                    this.apiMsgData.header.push({key: null, value: null});
                 } else if (type === 'validate') {
                     this.apiMsgData.validate.push({key: null, value: null, comparator: 'equals', param_type: 'string'});
                 } else if (type === 'extract') {
@@ -1586,33 +1849,35 @@
                 }
             },
             handleClick() {
-                console.log(this.apiMsgData.jsonVariable);
                 this.apiMsgData.jsonVariable = ''
             },
             querySearch(queryString, cb) {
                 // 调用 callback 返回建议列表的数据
                 cb(this.comparators);
             },
-            getTestcaseDetail(id){
-                get_detail_testcase(id)
+            getTestcaseDetail(){
+                get_detail_testcase(this.current_testcase_id)
                     .then(response => {
                         this.author = response.data.author;
                         this.testcase_name = response.data.testcase_name;
                         this.selected_project_id = response.data.selected_project_id;
-                        this.getInterfacesByProjectID(this.selected_project_id);
-                        this.selected_interface_id = response.data.selected_interface_id;
-                        this.getConfTestcaseByInterfaceID(this.selected_interface_id);
+                        this.before_selected_project_id = this.selected_project_id;
+                        this.getModules(this.selected_project_id);
+                        this.getCModulesByProjectID(this.selected_project_id);
+                        this.selected_module_id = response.data.selected_module_id;
+                        this.choose_selected_module_id = response.data.selected_module_id;
+                        this.getTestcaseByModuleID(this.selected_module_id);
                         this.selected_configure_id = response.data.selected_configure_id;
-                        this.selected_testcase_id = response.data.selected_testcase_id;
-                        this.selected = response.data.selected_testcase_id_name_list;
-                        console.log("此时的前置用例回显",this.selected)
+                        this.getConfigureFirstDetail(this.selected_configure_id);
+                        this.selected_testcase = response.data.selected_testcase;
+                        // this.selected_testcase_after = response.data.selected_testcase_after;
 
                         this.apiMsgData.method = response.data.method;
                         this.apiMsgData.url = response.data.url;
                         this.apiMsgData.param = response.data.param;
                         this.apiMsgData.header = response.data.header;
                         this.apiMsgData.variable = response.data.variable;
-                        this.apiMsgData.filesVariable = response.data.filesVariable;
+
                         this.apiMsgData.jsonVariable = response.data.jsonVariable;
                         if (this.apiMsgData.jsonVariable === 'null') {
                             this.apiMsgData.choiceType = 'data';
@@ -1623,16 +1888,28 @@
                         this.apiMsgData.parameterized = response.data.parameterized;
                         this.apiMsgData.setupHooks = response.data.setupHooks;
                         this.apiMsgData.teardownHooks = response.data.teardownHooks;
+                        this.apiMsgData.is_skip = response.data.is_skip;
                         this.showDebug = false;
                         this.is_scroll = false;
 
                     })
                     .catch(error => {
-                        this.$message.error('服务器错误');
+                        if(error.msg){
+                            this.$message.error(error.msg);
+                        }else{
+                            this.$message.error('服务器错误');
+                        }
+                        
                     })
             },
         },
         computed: {
+            headers() {
+                const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+                return{
+                    "Authorization": `JWT ${token}`// 直接从本地获取token就行
+                }
+            },
             monitorParam() {
                 return this.apiMsgData.param;
             },
@@ -1761,19 +2038,6 @@
                 ,
                 deep: true
             },
-
-            monitorfilesVariable: {
-                handler: function () {
-                    if (this.apiMsgData.filesVariable.length === 0) {
-                        this.addTableRow('filesVariable')
-                    }
-                    if (this.apiMsgData.filesVariable[this.apiMsgData.filesVariable.length - 1]['key'] || this.apiMsgData.filesVariable[this.apiMsgData.filesVariable.length - 1]['value']) {
-                        this.addTableRow('filesVariable')
-                    }
-                }
-                ,
-                deep: true
-            },
             monitorfilesVariable: {
                 handler: function() {
                     if (this.apiMsgData.filesVariable.length === 0) {
@@ -1878,34 +2142,45 @@
 
 <style scoped>
     .traceback, .validators {
-        background: #f7f7f7;
-        border: 2px solid #dedede;
-        padding: 10px;
-        margin: 5px 0;
-        border-radius: 5px;
+    background: #f7f7f7;
+    border: 2px solid #dedede;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
     }
+
+    .validatorPre {
+    margin: 0 !important;
+    white-space:pre-wrap; /* css3.0 */
+    white-space:-moz-pre-wrap; /* Firefox */
+    white-space:-pre-wrap; /* Opera 4-6 */
+    white-space:-o-pre-wrap; /* Opera 7 */
+    word-wrap:break-word; /* Internet Explorer 5.5+ */
+    }
+    
     .drag-box {
         display: flex;
         user-select: none;
     }
-    .validatorPre {
-        margin: 0 !important;
-        white-space:pre-wrap; /* css3.0 */
-        white-space:-moz-pre-wrap; /* Firefox */
-        /*white-space:-pre-wrap; !* Opera 4-6 *!*/
-        white-space:-o-pre-wrap; /* Opera 7 */
-        word-wrap:break-word; /* Internet Explorer 5.5+ */
-    }
 
     .drag-box-item {
         flex: 1;
-        /* height: 300px; */
         max-width: 330px;
         min-width: 300px;
+        width: 300px;
         background-color: #eff1f5;
         margin-right: 16px;
         border-radius: 6px;
         border: 1px #e1e4e8 solid;
+    }
+
+    .drag-box-col{
+        width: 300px;
+
+    }
+
+    .form-box{
+        width: 1500px;
     }
 
     .item-title {
