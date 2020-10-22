@@ -150,6 +150,12 @@ let router = new Router({
                     name: 'sdk_feature'
                 },
                 {
+                    path: '/web',
+                    component: resolve => require(['../components/web_auto/page_element.vue'], resolve),
+                    meta: { title: '用例列表' },
+                    name: 'web'
+                },
+                {
                     path: '/404',
                     component: resolve => require(['../components/page/404.vue'], resolve),
                     meta: { title: '404' },

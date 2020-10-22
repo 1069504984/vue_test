@@ -182,8 +182,8 @@
                         title: 'Web自动化',
                         subs: [
                             {
-                                index: 'sdk',
-                                title: '结构化综合'
+                                index: 'web',
+                                title: '用例列表'
                             },
                             {
                                 index: 'sdk_feature',
