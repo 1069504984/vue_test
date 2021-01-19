@@ -54,7 +54,7 @@
                 </el-table-column>
             </el-table>
             <div class="pagination">
-                <el-pagination background @current-change="handleCurrentChange" 
+                <el-pagination background @current-change="handleCurrentChange"
                 @size-change="handleSizeChange" :page-sizes="[4, 5, 8, 10, 20]"
                 layout="total, sizes, prev, pager, next, jumper" :total="total_nums" :page-size="page_size">
                 </el-pagination>
@@ -131,7 +131,7 @@
 </template>
 
 <script>
-    import { projects_list, delete_project, edit_project, envs_names, run_by_project } from '../../api/api';
+    import { projects_list, delete_project, edit_project, envs_names, run_by_project,get_all_func } from '../../api/api';
 
     export default {
         name: 'basetable',
@@ -153,9 +153,9 @@
 
                 form: {},
 
-                project_idx: -1,   // 在tableData数组中的索引值 
+                project_idx: -1,   // 在tableData数组中的索引值
                 project_id: -1,    // 在数据库中的真实索引值
-                
+
                 env_id: '',
                 envs_id_names: [],  // 返回的环境变量数据
             }
@@ -249,7 +249,7 @@
                     delete_project(this.multipleSelection[i].id)
                     .then(response => {
                         // 项目删除成功
-                        
+
                     })
                     .catch(error => {
                         this.$message.error('服务器错误');

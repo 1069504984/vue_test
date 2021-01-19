@@ -1327,7 +1327,7 @@
                     this.tabs_index = String(this.treeData.length-1);
                     this.debugVisible = false;
                     this.$nextTick(function () {
-                        document.getElementsByClassName('position-box')[0].scrollIntoView();
+                        document.getElementsByClassName('position-box')[0].scrollIntoView();  //滚动到可见区域
                     })
                 }).catch(error => {
                     if (typeof error === 'object' && error.hasOwnProperty('name')) {

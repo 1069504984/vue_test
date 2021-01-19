@@ -179,11 +179,11 @@
                     {
                         icon: 'el-icon-files',
                         index: '19',
-                        title: 'Web自动化',
+                        title: '自定义函数列表',
                         subs: [
                             {
                                 index: 'web',
-                                title: '用例列表'
+                                title: '函数列表'
                             },
                             {
                                 index: 'sdk_feature',

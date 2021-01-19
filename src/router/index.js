@@ -140,7 +140,7 @@ let router = new Router({
                 {
                     path: '/sdk',
                     component: resolve => require(['../components/page/sdk.vue'], resolve),
-                    meta: { title: 'sdk综合' },
+                    meta: { title: '结构化综合' },
                     name: 'sdk'
                 },
                 {
@@ -152,7 +152,7 @@ let router = new Router({
                 {
                     path: '/web',
                     component: resolve => require(['../components/web_auto/page_element.vue'], resolve),
-                    meta: { title: '用例列表' },
+                    meta: { title: '函数列表' },
                     name: 'web'
                 },
                 {
