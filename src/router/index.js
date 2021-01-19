@@ -133,9 +133,27 @@ let router = new Router({
                 },
                 {
                     path: '/reports_view/:id',
-                    component: resolve => require(['../components/page/ReportView.vue'], resolve),
+                    component: resolve => require(['../components/page/ReportView_new.vue'], resolve),
                     meta: { title: '报告查看' },
                     name: 'reports_view'
+                },
+                {
+                    path: '/sdk',
+                    component: resolve => require(['../components/page/sdk.vue'], resolve),
+                    meta: { title: '结构化综合' },
+                    name: 'sdk'
+                },
+                {
+                    path: '/sdk_feature',
+                    component: resolve => require(['../components/page/sdk_feature.vue'], resolve),
+                    meta: { title: '搜图综合' },
+                    name: 'sdk_feature'
+                },
+                {
+                    path: '/web',
+                    component: resolve => require(['../components/web_auto/page_element.vue'], resolve),
+                    meta: { title: '函数列表' },
+                    name: 'web'
                 },
                 {
                     path: '/404',

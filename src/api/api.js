@@ -156,3 +156,9 @@ export const add_env = params => { return axios.post(`${host}/envs/`, params) };
 
 // 获取所有统计信息
 export const summary = () => { return axios.get(`${host}/summary/`) };
+
+// debug调试
+export const debug = (id,params) => { return axios.post(`${host}/testcases/` + id +'/debug/',params)};
+
+//获取所有内置函数名次
+export  const  get_all_func = id =>{return axios.get(`${host}/debugtalks/`+ id +'/get_all_func/')};

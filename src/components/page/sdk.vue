@@ -2,8 +2,8 @@
     <div class="table">
         <div class="crumbs">
             <el-breadcrumb separator="/">
-                <el-breadcrumb-item><i class="el-icon-lx-calendar"></i> 项目管理</el-breadcrumb-item>
-                <el-breadcrumb-item>项目列表</el-breadcrumb-item>
+                <el-breadcrumb-item><i class="el-icon-lx-calendar"></i> SDK综合</el-breadcrumb-item>
+                <el-breadcrumb-item>SDK列表</el-breadcrumb-item>
             </el-breadcrumb>
         </div>
         <div class="container">
@@ -18,31 +18,20 @@
 
                 <el-table-column type="index" label="序号" width="55" align="center"></el-table-column>
 
-                <el-table-column prop="name" label="项目名称" width="250">
-                    <template slot-scope="scope">
-                        <el-popover trigger="hover" placement="top">
-                            <p>项目名: {{ scope.row.name }}</p>
-                            <p>接口数: {{ scope.row.interfaces }}</p>
-                            <p>套件数: {{ scope.row.testsuits }}</p>
-                            <p>用例数: {{ scope.row.testcases }}</p>
-                            <p>配置数: {{ scope.row.configures }}</p>
-                            <div slot="reference" class="name-wrapper">
-                                <el-tag size="medium">{{ scope.row.name }}</el-tag>
-                            </div>
-                        </el-popover>
-                </template>
+                <el-table-column prop="name" label="SDK版本号" width="250">
+
                 </el-table-column>
 
-                <el-table-column prop="leader" label="项目负责人" width="100" align="center">
+                <el-table-column prop="leader" label="任务号" width="100" align="center">
                 </el-table-column>
 
-                <el-table-column prop="publish_app" label="应用名称" width="250">
+                <el-table-column prop="publish_app" label="应用ip" width="200">
                 </el-table-column>
 
-                <el-table-column prop="tester" label="测试人员" width="100" align="center">
+                <el-table-column prop="tester" label="结构化总数" width="100" align="center">
                 </el-table-column>
 
-                <el-table-column prop="create_time" label="创建时间" sortable align="center">
+                <el-table-column prop="create_time" label="create_time" sortable align="center">
                 </el-table-column>
 
                 <el-table-column label="操作" align="center">
@@ -55,8 +44,8 @@
             </el-table>
             <div class="pagination">
                 <el-pagination background @current-change="handleCurrentChange"
-                @size-change="handleSizeChange" :page-sizes="[4, 5, 8, 10, 20]"
-                layout="total, sizes, prev, pager, next, jumper" :total="total_nums" :page-size="page_size">
+                               @size-change="handleSizeChange" :page-sizes="[4, 5, 8, 10, 20]"
+                               layout="total, sizes, prev, pager, next, jumper" :total="total_nums" :page-size="page_size">
                 </el-pagination>
             </div>
         </div>
@@ -112,10 +101,10 @@
 
                     <el-select v-model="env_id" clearable placeholder="请选择">
                         <el-option
-                            v-for="item in envs_id_names"
-                            :key="item.id"
-                            :label="item.name"
-                            :value="item.id">
+                                v-for="item in envs_id_names"
+                                :key="item.id"
+                                :label="item.name"
+                                :value="item.id">
                         </el-option>
                     </el-select>
 
@@ -128,10 +117,11 @@
             </span>
         </el-dialog>
     </div>
+
 </template>
 
 <script>
-    import { projects_list, delete_project, edit_project, envs_names, run_by_project,get_all_func } from '../../api/api';
+    import { projects_list, delete_project, edit_project, envs_names, run_by_project } from '../../api/api';
 
     export default {
         name: 'basetable',
@@ -205,11 +195,11 @@
                     'page': this.cur_page,
                     'size': this.page_size
                 })
-                .then(response => {
-                    this.tableData = response.data.results;
-                    this.cur_page = response.data.current_page_num || 1;
-                    this.total_nums = response.data.count || 1;
-                })
+                    .then(response => {
+                        this.tableData = response.data.results;
+                        this.cur_page = response.data.current_page_num || 1;
+                        this.total_nums = response.data.count || 1;
+                    })
             },
             search() {
                 this.is_search = true;
@@ -247,13 +237,13 @@
                     str += this.multipleSelection[i].name + ' ';
                     // alert(this.multipleSelection[i].id)
                     delete_project(this.multipleSelection[i].id)
-                    .then(response => {
-                        // 项目删除成功
+                        .then(response => {
+                            // 项目删除成功
 
-                    })
-                    .catch(error => {
-                        this.$message.error('服务器错误');
-                    })
+                        })
+                        .catch(error => {
+                            this.$message.error('服务器错误');
+                        })
                 }
 
                 this.$message.error('删除了' + str);
@@ -266,81 +256,80 @@
             // 保存编辑
             saveEdit() {
                 edit_project(this.project_id, this.form)
-                .then(response => {
-                    this.editVisible = false;
-                    this.$message.success(`修改【 ${this.form.name} 】成功`);
-                    if(this.tableData[this.project_idx].id === this.project_id){
-                        this.$set(this.tableData, this.project_idx, this.form);
-                    }else{
-                        for(let i = 0; i < this.tableData.length; i++){
-                            if(this.tableData[i].id === this.project_id){
-                                this.$set(this.tableData, i, this.form);
-                                return ;
+                    .then(response => {
+                        this.editVisible = false;
+                        this.$message.success(`修改【 ${this.form.name} 】成功`);
+                        if(this.tableData[this.project_idx].id === this.project_id){
+                            this.$set(this.tableData, this.project_idx, this.form);
+                        }else{
+                            for(let i = 0; i < this.tableData.length; i++){
+                                if(this.tableData[i].id === this.project_id){
+                                    this.$set(this.tableData, i, this.form);
+                                    return ;
+                                }
                             }
                         }
-                    }
-                })
-                .catch(error => {
-                    this.editVisible = false;
-                    this.$message.error('服务器错误');
-                })
+                    })
+                    .catch(error => {
+                        this.editVisible = false;
+                        this.$message.error('服务器错误');
+                    })
 
             },
             // 确定删除
             deleteRow(){
                 delete_project(this.project_id)
-                .then(response => {
-                    // 项目删除成功
-                    this.$message.success('删除成功');
-                    this.delVisible = false;
-                    if(this.tableData[this.project_idx].id === this.project_id){
-                        this.tableData.splice(this.project_idx, 1);
-                    }else{
-                        for(let i = 0; i < this.tableData.length; i++){
-                            if(this.tableData[i].id === this.project_id){
-                                this.tableData.splice(i, 1);
-                                return ;
+                    .then(response => {
+                        // 项目删除成功
+                        this.$message.success('删除成功');
+                        this.delVisible = false;
+                        if(this.tableData[this.project_idx].id === this.project_id){
+                            this.tableData.splice(this.project_idx, 1);
+                        }else{
+                            for(let i = 0; i < this.tableData.length; i++){
+                                if(this.tableData[i].id === this.project_id){
+                                    this.tableData.splice(i, 1);
+                                    return ;
+                                }
                             }
                         }
-                    }
-                })
-                .catch(error => {
-                    this.$message.error('服务器错误');
-                })
+                    })
+                    .catch(error => {
+                        this.$message.error('服务器错误');
+                    })
 
             },
             // 获取所有环境变量的ID和名称
             getEnvsIdNames(){
                 envs_names()
-                .then(response => {
-                    this.envs_id_names = response.data;   // 将返回的环境变量数据赋值给envs_id_names
-                })
-                .catch(error => {
-                    this.$message.error('服务器错误');
-                })
+                    .then(response => {
+                        this.envs_id_names = response.data;   // 将返回的环境变量数据赋值给envs_id_names
+                    })
+                    .catch(error => {
+                        this.$message.error('服务器错误');
+                    })
             },
             //
             confirmRun(){
                 run_by_project(this.project_id, this.env_id)
-                .then(response => {
-                    // console.log(response.data);   // 通过项目运行用例
-                    this.$router.push({ path: `/reports_view/${response.data.id}` })
-                })
-                .catch(error => {
-                    // console.log(error);
-                    if (typeof error === 'object' && error.hasOwnProperty('msg') ){
-                        this.$message.error(error.msg);
-                    } else if (typeof error === 'object' && error.hasOwnProperty('detail')) {
-                        this.$message.error(error.detail);
-                    }else {
-                        this.$message.error('服务器错误');
-                    }
-                })
+                    .then(response => {
+                        // console.log(response.data);   // 通过项目运行用例
+                        this.$router.push({ path: `/reports_view/${response.data.id}` })
+                    })
+                    .catch(error => {
+                        // console.log(error);
+                        if (typeof error === 'object' && error.hasOwnProperty('msg') ){
+                            this.$message.error(error.msg);
+                        } else if (typeof error === 'object' && error.hasOwnProperty('detail')) {
+                            this.$message.error(error.detail);
+                        }else {
+                            this.$message.error('服务器错误');
+                        }
+                    })
             }
 
         }
     }
-
 </script>
 
 <style scoped>
@@ -370,4 +359,5 @@
     .mr10{
         margin-right: 10px;
     }
+
 </style>
